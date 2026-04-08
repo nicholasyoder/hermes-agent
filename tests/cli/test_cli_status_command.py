@@ -11,6 +11,7 @@ def _make_cli():
     cli_obj = HermesCLI.__new__(HermesCLI)
     cli_obj.config = {}
     cli_obj.console = MagicMock()
+    cli_obj.chat_console = MagicMock()
     cli_obj.agent = None
     cli_obj.conversation_history = []
     cli_obj.session_id = "session-123"
