@@ -4454,6 +4454,8 @@ class HermesCLI:
             self.show_toolsets()
         elif canonical == "config":
             self.show_config()
+        elif canonical == "new":
+            self.new_session()
         elif canonical == "clear":
             self.new_session(silent=True)
             # Clear terminal screen.  Inside the TUI, Rich's console.clear()
@@ -4547,8 +4549,6 @@ class HermesCLI:
                         _cprint("  No title set. Usage: /title <your session title>")
                 else:
                     _cprint("  Session database not available.")
-        elif canonical == "new":
-            self.new_session()
         elif canonical == "resume":
             self._handle_resume_command(cmd_original)
         elif canonical == "model":

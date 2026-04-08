@@ -2,10 +2,10 @@
 
 When an agent is running, the base adapter's Level 1 guard in
 handle_message() intercepts all incoming messages and queues them as
-pending.  Certain commands (/stop, /new, /reset, /approve, /deny,
+pending.  Certain commands (/stop, /new, /reset, /clear, /approve, /deny,
 /status) must bypass this guard and be dispatched directly to the gateway
 runner — otherwise they are queued as user text and either:
-  - leak into the conversation as agent input (/stop, /new), or
+  - leak into the conversation as agent input (/stop, /new, /clear), or
   - deadlock (/approve, /deny — agent blocks on Event.wait)
 
 These tests verify that the bypass works at the adapter level and that
@@ -160,6 +160,18 @@ class TestCommandBypassActiveSession:
         assert sk not in adapter._pending_messages
         assert any("handled:status" in r for r in adapter.sent_responses)
 
+    @pytest.mark.asyncio
+    async def test_clear_bypasses_guard(self):
+        """/clear (alias for /new) must be dispatched directly, not queued."""
+        adapter = _make_adapter()
+        sk = _session_key()
+        adapter._active_sessions[sk] = asyncio.Event()
+
+        await adapter.handle_message(_make_event("/clear"))
+
+        assert sk not in adapter._pending_messages
+        assert any("handled:clear" in r for r in adapter.sent_responses)
+
 
 # ---------------------------------------------------------------------------
 # Tests: non-bypass messages still get queued
@@ -264,6 +276,12 @@ class TestPendingCommandSafetyNet:
         assert resolve_command("reset") is not None
         assert resolve_command("reset").name == "new"  # alias
 
+    def test_clear_command_detected(self):
+        from hermes_cli.commands import resolve_command
+
+        assert resolve_command("clear") is not None
+        assert resolve_command("clear").name == "clear"  # standalone command
+
     def test_unknown_command_not_detected(self):
         from hermes_cli.commands import resolve_command
 
@@ -311,3 +329,15 @@ class TestBypassWithBotnameSuffix:
 
         assert sk not in adapter._pending_messages
         assert any("handled:new" in r for r in adapter.sent_responses)
+
+    @pytest.mark.asyncio
+    async def test_clear_with_botname(self):
+        """/clear@MyHermesBot must bypass the guard."""
+        adapter = _make_adapter()
+        sk = _session_key()
+        adapter._active_sessions[sk] = asyncio.Event()
+
+        await adapter.handle_message(_make_event("/clear@MyHermesBot"))
+
+        assert sk not in adapter._pending_messages
+        assert any("handled:clear" in r for r in adapter.sent_responses)

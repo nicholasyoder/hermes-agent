@@ -1929,14 +1929,14 @@ class GatewayRunner:
                 logger.info("HARD STOP for session %s — session lock released", _quick_key[:20])
                 return "⚡ Force-stopped. The session is unlocked — you can send a new message."
 
-            # /reset and /new must bypass the running-agent guard so they
-            # actually dispatch as commands instead of being queued as user
+            # /reset, /new, and /clear must bypass the running-agent guard so
+            # they actually dispatch as commands instead of being queued as user
             # text (which would be fed back to the agent with the same
             # broken history — #2170).  Interrupt the agent first, then
             # clear the adapter's pending queue so the stale "/reset" text
             # doesn't get re-processed as a user message after the
             # interrupt completes.
-            if _cmd_def_inner and _cmd_def_inner.name == "new":
+            if _cmd_def_inner and _cmd_def_inner.name in ("new", "clear"):
                 running_agent = self._running_agents.get(_quick_key)
                 if running_agent and running_agent is not _AGENT_PENDING_SENTINEL:
                     running_agent.interrupt("Session reset requested")
@@ -2041,7 +2041,7 @@ class GatewayRunner:
         _cmd_def = _resolve_cmd(command) if command else None
         canonical = _cmd_def.name if _cmd_def else command
 
-        if canonical == "new":
+        if canonical in ("new", "clear"):
             return await self._handle_reset_command(event)
         
         if canonical == "help":
@@ -3243,7 +3243,7 @@ class GatewayRunner:
         return "\n".join(lines)
 
     async def _handle_reset_command(self, event: MessageEvent) -> str:
-        """Handle /new or /reset command."""
+        """Handle /new, /reset, or /clear command."""
         source = event.source
         
         # Get existing session key

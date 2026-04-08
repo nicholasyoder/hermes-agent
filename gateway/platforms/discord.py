@@ -1573,6 +1573,10 @@ class DiscordAdapter(BasePlatformAdapter):
         async def slash_reset(interaction: discord.Interaction):
             await self._run_simple_slash(interaction, "/reset", "Session reset~")
 
+        @tree.command(name="clear", description="Clear conversation and start fresh")
+        async def slash_clear(interaction: discord.Interaction):
+            await self._run_simple_slash(interaction, "/clear", "Conversation cleared~")
+
         @tree.command(name="model", description="Show or change the model")
         @discord.app_commands.describe(name="Model name (e.g. anthropic/claude-sonnet-4). Leave empty to see current.")
         async def slash_model(interaction: discord.Interaction, name: str = ""):
